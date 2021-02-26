@@ -1,6 +1,8 @@
 package com.example.exprijksmuseam
 
+import android.content.ContentValues.TAG
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -8,9 +10,11 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.exprijksmuseam.databinding.FragmentItemGalleryBinding
-import com.example.exprijksmuseam.model.Artist
 import com.example.exprijksmuseam.model.ItemInterface
-import com.example.exprijksmuseam.model.WorkOfArt
+import com.example.exprijksmuseam.network.RijksmuseamApi
+import retrofit2.Call
+import retrofit2.Response
+import javax.security.auth.callback.Callback
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -52,24 +56,20 @@ class ItemGalleryFragment : Fragment() {
             LinearLayoutManager(this.context, RecyclerView.VERTICAL, false)
         binding.rvItems.adapter = itemAdapter
 
-        // Add random data
-        items.add(
-            WorkOfArt(
-                "Nachtwacht",
-                "https://lh3.googleusercontent.com/J-mxAE7CPu-DXIOx4QKBtb0GC4ud37da1QK7CzbTIDswmvZHXhLm4Tv2-1H3iBXJWAW_bHm7dMl3j5wv_XiWAg55VOM=s0",
-                "blablbla",
-                "nl"
-            )
-        )
+        // Get data from api and store in array items
+        RijksmuseamApi.retrofitService.getAll(getString(R.string.rijksmuseam_api_key), true)
+            .enqueue(
+                object : Callback, retrofit2.Callback<String> {
+                    override fun onFailure(call: Call<String>, t: Throwable) {
+                        Log.e(TAG, "onFailure: Something went wrong with the call")
+                        binding.temp.text = "Failure: " + t.message
+                    }
 
-        items.add(
-            Artist(
-                "Rembrandt van Rijn",
-                "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg/1200px-Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg",
-                "blababalbal",
-                "nl"
+                    override fun onResponse(call: Call<String>, response: Response<String>) {
+                        binding.temp.text = response.body()
+                    }
+                }
             )
-        )
 
         itemAdapter.notifyDataSetChanged()
     }
